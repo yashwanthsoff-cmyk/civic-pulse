@@ -57,7 +57,7 @@ function List() {
             <input
               type="checkbox"
               checked={demoOn}
-              onChange={(e) => navigate({ search: (p) => ({ ...p, demo: e.target.checked ? "1" : undefined }) })}
+              onChange={(e) => navigate({ to: "/my-reports", search: (p: any) => ({ ...p, demo: e.target.checked ? "1" : undefined }) })}
               className="accent-white"
             />
             Demo mode
@@ -99,7 +99,7 @@ function List() {
               {state.items.map((c) => (
                 <button
                   key={c.complaintId}
-                  onClick={() => navigate({ search: (p) => ({ ...p, id: c.complaintId }) })}
+                  onClick={() => navigate({ to: "/my-reports", search: (p: any) => ({ ...p, id: c.complaintId }) })}
                   className="glass-card glass-card-hover flex w-full items-center justify-between gap-4 p-5 text-left"
                 >
                   <div className="min-w-0 flex-1">
@@ -172,7 +172,7 @@ function Detail({ complaintId }: { complaintId: string }) {
     <main className="px-6 md:px-10 py-12 md:py-16">
       <div className="mx-auto max-w-[880px]">
         <button
-          onClick={() => navigate({ search: (p) => ({ ...p, id: undefined }) })}
+          onClick={() => navigate({ to: "/my-reports", search: (p: any) => ({ ...p, id: undefined }) })}
           className="mb-8 inline-flex items-center gap-2 text-[13px] text-white/55 hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" /> All reports
