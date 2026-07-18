@@ -1,7 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { z } from "zod";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { toast } from "sonner";
 import { ChevronRight, Inbox, Sparkles, RefreshCw, ArrowLeft, FastForward } from "lucide-react";
 import { listComplaints, getComplaint, type Complaint, type ComplaintStatus } from "@/api/complaints";
@@ -12,7 +10,7 @@ import { Countdown } from "@/components/nagar/Countdown";
 import { ClientOnly } from "@/components/nagar/ClientOnly";
 import { LeafletMap } from "@/components/nagar/LeafletMap";
 
-const search = z.object({ id: z.string().optional(), demo: z.enum(["1"]).optional() });
+type Search = { id?: string; demo?: "1" };
 
 export const Route = createFileRoute("/my-reports")({
   head: () => ({
@@ -21,7 +19,10 @@ export const Route = createFileRoute("/my-reports")({
       { name: "description", content: "Track every complaint you've filed. Live SLA, auto-escalation, real timestamps." },
     ],
   }),
-  validateSearch: zodValidator(search),
+  validateSearch: (raw: Record<string, unknown>): Search => ({
+    id: typeof raw.id === "string" ? raw.id : undefined,
+    demo: raw.demo === "1" ? "1" : undefined,
+  }),
   component: MyReports,
 });
 
