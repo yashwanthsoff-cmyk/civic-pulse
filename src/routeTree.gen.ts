@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WardsRouteImport } from './routes/wards'
+import { Route as ReportRouteImport } from './routes/report'
+import { Route as MyReportsRouteImport } from './routes/my-reports'
+import { Route as HeatmapRouteImport } from './routes/heatmap'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WardsRoute = WardsRouteImport.update({
+  id: '/wards',
+  path: '/wards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyReportsRoute = MyReportsRouteImport.update({
+  id: '/my-reports',
+  path: '/my-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HeatmapRoute = HeatmapRouteImport.update({
+  id: '/heatmap',
+  path: '/heatmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/heatmap': typeof HeatmapRoute
+  '/my-reports': typeof MyReportsRoute
+  '/report': typeof ReportRoute
+  '/wards': typeof WardsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/heatmap': typeof HeatmapRoute
+  '/my-reports': typeof MyReportsRoute
+  '/report': typeof ReportRoute
+  '/wards': typeof WardsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/heatmap': typeof HeatmapRoute
+  '/my-reports': typeof MyReportsRoute
+  '/report': typeof ReportRoute
+  '/wards': typeof WardsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/heatmap' | '/my-reports' | '/report' | '/wards'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/heatmap' | '/my-reports' | '/report' | '/wards'
+  id: '__root__' | '/' | '/heatmap' | '/my-reports' | '/report' | '/wards'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HeatmapRoute: typeof HeatmapRoute
+  MyReportsRoute: typeof MyReportsRoute
+  ReportRoute: typeof ReportRoute
+  WardsRoute: typeof WardsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wards': {
+      id: '/wards'
+      path: '/wards'
+      fullPath: '/wards'
+      preLoaderRoute: typeof WardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-reports': {
+      id: '/my-reports'
+      path: '/my-reports'
+      fullPath: '/my-reports'
+      preLoaderRoute: typeof MyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/heatmap': {
+      id: '/heatmap'
+      path: '/heatmap'
+      fullPath: '/heatmap'
+      preLoaderRoute: typeof HeatmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +121,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HeatmapRoute: HeatmapRoute,
+  MyReportsRoute: MyReportsRoute,
+  ReportRoute: ReportRoute,
+  WardsRoute: WardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
