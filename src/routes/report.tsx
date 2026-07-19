@@ -166,7 +166,7 @@ function ReportPage() {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-3">
-              <button className="btn-primary" onClick={() => navigate({ to: "/my-reports" })}>Track this report</button>
+              <button className="btn-primary" onClick={() => navigate({ to: "/my-reports", search: { id: success.complaintId } })}>Track this report</button>
               <button
                 className="btn-ghost"
                 onClick={() => {

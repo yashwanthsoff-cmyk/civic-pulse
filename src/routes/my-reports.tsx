@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronRight, Inbox, Sparkles, RefreshCw, ArrowLeft, FastForward } from "lucide-react";
-import { listComplaints, getComplaint, type Complaint, type ComplaintStatus } from "@/api/complaints";
-import { fastForwardComplaint } from "@/api/demo";
+import { ChevronRight, Inbox, Sparkles, RefreshCw, ArrowLeft, FastForward, Trash2, AlertTriangle } from "lucide-react";
+import { listComplaints, getComplaint, deleteComplaint, type Complaint, type ComplaintStatus } from "@/api/complaints";
+import { fastForwardComplaint, triggerEscalationSweep, resolveComplaint } from "@/api/demo";
 import { getSessionId } from "@/lib/session";
 import { StatusBadge } from "@/components/nagar/StatusBadge";
 import { Countdown } from "@/components/nagar/Countdown";
@@ -36,6 +36,21 @@ function List() {
   const { demo } = Route.useSearch();
   const demoOn = demo === "1";
   const [state, setState] = useState<{ kind: "loading" } | { kind: "empty" } | { kind: "ok"; items: Complaint[] } | { kind: "error"; msg: string }>({ kind: "loading" });
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleQuickDelete = (complaintId: string, sessionId: string) => {
+    const confirmed = window.confirm("Delete this report? This can't be undone.");
+    if (!confirmed) return;
+    setDeletingId(complaintId);
+    deleteComplaint(complaintId, sessionId, "Deleted from list view")
+      .then(() => {
+        toast.success("Report deleted");
+        load();
+      })
+      .catch(() => toast.error("Couldn't delete this report."))
+      .finally(() => setDeletingId(null));
+  };
 
   const load = () => {
     setState({ kind: "loading" });
@@ -97,7 +112,7 @@ function List() {
           {state.kind === "ok" && (
             <div className="space-y-3">
               {state.items.map((c) => (
-                <button
+                <div
                   key={c.complaintId}
                   onClick={() => navigate({ to: "/my-reports", search: (p: any) => ({ ...p, id: c.complaintId }) })}
                   className="glass-card glass-card-hover flex w-full items-center justify-between gap-4 p-5 text-left"
@@ -117,8 +132,19 @@ function List() {
                       <Countdown deadline={c.slaDeadline} terminal={c.status === "RESOLVED" || c.status === "ESCALATED"} />
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-white/40" />
-                </button>
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      disabled={deletingId === c.complaintId}
+                      onClick={() => handleQuickDelete(c.complaintId, c.sessionId)}
+                      className="rounded-full p-1.5 text-white/30 hover:text-[rgb(248,113,113)] hover:bg-[rgba(248,113,113,0.1)] transition-colors disabled:opacity-40"
+                      aria-label="Delete report"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <ChevronRight className="h-4 w-4 text-white/40" />
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -153,7 +179,6 @@ function Detail({ complaintId }: { complaintId: string }) {
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [complaintId]);
 
-  // 30s polling while tab visible
   useEffect(() => {
     let id: number | null = null;
     const start = () => {
@@ -198,6 +223,7 @@ function Detail({ complaintId }: { complaintId: string }) {
 }
 
 function DetailBody({ c, demoOn, onChanged }: { c: Complaint; demoOn: boolean; onChanged: () => void }) {
+  const navigate = useNavigate();
   const active = stepIndex(c.status, c);
   const terminal = c.status === "RESOLVED" || c.status === "ESCALATED";
   const escalated = !!c.escalatedAt || c.status === "ESCALATED";
@@ -215,15 +241,54 @@ function DetailBody({ c, demoOn, onChanged }: { c: Complaint; demoOn: boolean; o
     c.resolvedAt,
   ];
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("Wrong information");
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await deleteComplaint(c.complaintId, c.sessionId, deleteReason);
+      toast.success("Report deleted");
+      navigate({ to: "/my-reports", search: (p: any) => ({ ...p, id: undefined }) });
+    } catch {
+      toast.error("Couldn't delete this report.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function ff() {
     const key = (import.meta as any).env?.VITE_DEMO_KEY || "";
     try {
       await fastForwardComplaint(c.complaintId, key);
-      toast.success("SLA deadline moved up — escalation will fire on the next check");
+      toast.success("SLA deadline moved up");
       onChanged();
     } catch (e: any) {
       if (String(e?.message || "").includes("401")) toast.error("Demo key not configured");
       else toast.error("Couldn't fast-forward this complaint.");
+    }
+  }
+
+  async function sweep() {
+    const secret = (import.meta as any).env?.VITE_CRON_SECRET || "";
+    try {
+      const result = await triggerEscalationSweep(secret);
+      toast.success(`Checked ${result.scanned} complaint(s), escalated ${result.escalated}`);
+      onChanged();
+    } catch (e: any) {
+      toast.error("Couldn't trigger the escalation check.");
+    }
+  }
+
+  async function resolve() {
+    const key = (import.meta as any).env?.VITE_DEMO_KEY || "";
+    try {
+      await resolveComplaint(c.complaintId, key);
+      toast.success("Marked resolved");
+      onChanged();
+    } catch {
+      toast.error("Couldn't resolve this complaint.");
     }
   }
 
@@ -236,13 +301,61 @@ function DetailBody({ c, demoOn, onChanged }: { c: Complaint; demoOn: boolean; o
         </div>
         <h1 className="mt-4 text-[32px] font-semibold tracking-tight md:text-[40px]">{c.category}</h1>
         {c.description && <p className="mt-3 text-[15px] leading-relaxed text-white/70">{c.description}</p>}
+
+        <button
+          type="button"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="mt-4 inline-flex items-center gap-2 text-[13px] text-white/40 hover:text-[rgb(248,113,113)] transition-colors"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Delete this report
+        </button>
+
+        {showDeleteConfirm && (
+          <div className="mt-4 rounded-[16px] p-5" style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.3)" }}>
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[rgb(248,113,113)]" />
+              <div className="flex-1">
+                <div className="text-[14px] font-medium">Delete this report?</div>
+                <div className="mt-1 text-[13px] text-white/60">This can't be undone. Let us know why:</div>
+                <select
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="mt-3 w-full rounded-[10px] bg-white/[0.05] px-3 py-2 text-[13px] outline-none"
+                  style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+                >
+                  <option>Wrong information</option>
+                  <option>Duplicate report</option>
+                  <option>Issue already resolved</option>
+                  <option>Filed by mistake</option>
+                  <option>Other</option>
+                </select>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={handleDelete}
+                    className="btn-primary !bg-[rgb(248,113,113)] !text-white disabled:opacity-50"
+                  >
+                    {deleting ? "Deleting..." : "Yes, delete it"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="btn-ghost !py-2 !px-4 text-[13px]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Timeline */}
       <div className="glass-card p-6 md:p-8">
         <div className="eyebrow mb-6">Progress</div>
 
-        {/* Desktop horizontal */}
         <div className="hidden md:block">
           <div className="flex items-start">
             {STEPS.map((s, i) => (
@@ -281,7 +394,6 @@ function DetailBody({ c, demoOn, onChanged }: { c: Complaint; demoOn: boolean; o
           </div>
         </div>
 
-        {/* Mobile vertical */}
         <div className="md:hidden space-y-4">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-start gap-4">
@@ -308,9 +420,17 @@ function DetailBody({ c, demoOn, onChanged }: { c: Complaint; demoOn: boolean; o
             <Countdown deadline={c.slaDeadline} terminal={terminal} />
           </div>
           {demoOn && !terminal && (
-            <button onClick={ff} className="btn-ghost !py-2 !px-4 text-[13px]">
-              <FastForward className="h-3.5 w-3.5" /> Fast-forward SLA (demo)
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={ff} className="btn-ghost !py-2 !px-4 text-[13px]">
+                <FastForward className="h-3.5 w-3.5" /> Fast-forward SLA (demo)
+              </button>
+              <button onClick={sweep} className="btn-ghost !py-2 !px-4 text-[13px]">
+                <FastForward className="h-3.5 w-3.5" /> Escalate now (demo)
+              </button>
+              <button onClick={resolve} className="btn-ghost !py-2 !px-4 text-[13px]">
+                <FastForward className="h-3.5 w-3.5" /> Mark resolved (demo)
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -14,5 +14,5 @@ export async function getWardScores(): Promise<{
   cityWideScore: number | null;
   totalCurrentlyEscalated: number;
 }> {
-  return request("/wards");
+  return request("/wards-scores");
 }

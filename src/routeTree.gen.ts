@@ -9,25 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WardsRouteImport } from './routes/wards'
-import { Route as ReportRouteImport } from './routes/report'
-import { Route as MyReportsRouteImport } from './routes/my-reports'
-import { Route as HeatmapRouteImport } from './routes/heatmap'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HeatmapRouteImport } from './routes/heatmap'
+import { Route as MyReportsRouteImport } from './routes/my-reports'
+import { Route as ReportRouteImport } from './routes/report'
+import { Route as WardsRouteImport } from './routes/wards'
 
-const WardsRoute = WardsRouteImport.update({
-  id: '/wards',
-  path: '/wards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportRoute = ReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyReportsRoute = MyReportsRouteImport.update({
-  id: '/my-reports',
-  path: '/my-reports',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HeatmapRoute = HeatmapRouteImport.update({
@@ -35,9 +25,19 @@ const HeatmapRoute = HeatmapRouteImport.update({
   path: '/heatmap',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const MyReportsRoute = MyReportsRouteImport.update({
+  id: '/my-reports',
+  path: '/my-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WardsRoute = WardsRouteImport.update({
+  id: '/wards',
+  path: '/wards',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -81,25 +81,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/wards': {
-      id: '/wards'
-      path: '/wards'
-      fullPath: '/wards'
-      preLoaderRoute: typeof WardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/report': {
-      id: '/report'
-      path: '/report'
-      fullPath: '/report'
-      preLoaderRoute: typeof ReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-reports': {
-      id: '/my-reports'
-      path: '/my-reports'
-      fullPath: '/my-reports'
-      preLoaderRoute: typeof MyReportsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/heatmap': {
@@ -109,11 +95,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HeatmapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/my-reports': {
+      id: '/my-reports'
+      path: '/my-reports'
+      fullPath: '/my-reports'
+      preLoaderRoute: typeof MyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wards': {
+      id: '/wards'
+      path: '/wards'
+      fullPath: '/wards'
+      preLoaderRoute: typeof WardsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -129,3 +129,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

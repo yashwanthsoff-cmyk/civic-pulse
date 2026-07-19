@@ -1,14 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { RefreshCw, BarChart3 } from "lucide-react";
 import { getWardScores, type WardScore } from "@/api/wards";
+import { formatWard } from "@/lib/utils";
 
 export const Route = createFileRoute("/wards")({
   head: () => ({
     meta: [
-      { title: "Ward accountability — NagarSeva" },
+      { title: "Ward accountability â€” NagarSeva" },
       { name: "description", content: "Public accountability scores for every ward. No login, no filler numbers." },
-      { property: "og:title", content: "Ward accountability — NagarSeva" },
+      { property: "og:title", content: "Ward accountability â€” NagarSeva" },
       { property: "og:description", content: "Real scores from real reports. Public by design." },
     ],
   }),
@@ -98,11 +99,17 @@ function Wards() {
                   const sc = scoreColor(w.accountabilityScore);
                   return (
                     <div key={w.ward} className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-6 py-4 text-[14px]" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}>
-                      <div className="md:col-span-3 font-medium">{w.ward}</div>
+                      <div className="md:col-span-3 font-medium">
+                        {w.ward === "Unmapped Area" ? (
+                          <span className="text-white/50 text-[13px] italic">{formatWard(w.ward)}</span>
+                        ) : (
+                          w.ward
+                        )}
+                      </div>
                       <div className="md:col-span-2 md:text-right"><span className="md:hidden text-white/40 text-[12px] mr-2">Total</span>{w.totalComplaints}</div>
                       <div className="md:col-span-2 md:text-right"><span className="md:hidden text-white/40 text-[12px] mr-2">On-time</span>{w.resolvedOnTime}</div>
                       <div className="md:col-span-2 md:text-right"><span className="md:hidden text-white/40 text-[12px] mr-2">Escalated</span><span style={{ color: w.escalated > 0 ? "rgb(248,113,113)" : undefined }}>{w.escalated}</span></div>
-                      <div className="md:col-span-1 md:text-right text-white/60"><span className="md:hidden text-white/40 text-[12px] mr-2">Overdue</span>{w.avgOverdueDays === null ? "—" : `${w.avgOverdueDays.toFixed(1)}d`}</div>
+                      <div className="md:col-span-1 md:text-right text-white/60"><span className="md:hidden text-white/40 text-[12px] mr-2">Overdue</span>{w.avgOverdueDays === null ? "â€”" : `${w.avgOverdueDays.toFixed(1)}d`}</div>
                       <div className="md:col-span-2 md:text-right">
                         <span className="inline-flex items-center rounded-full px-3 py-1 text-[13px] font-mono font-semibold" style={{ color: sc.c, background: sc.bg, border: `1px solid ${sc.border}` }}>
                           {w.accountabilityScore === null ? "No data yet" : w.accountabilityScore.toFixed(0)}

@@ -21,6 +21,27 @@ export type Complaint = {
   escalationNote: string | null;
 };
 
+function mapComplaint(row: any): Complaint {
+  return {
+    complaintId: row.id,
+    sessionId: row.session_id,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    ward: row.ward,
+    category: row.category,
+    description: row.description,
+    photoUrl: row.photo_url,
+    department: row.department,
+    status: row.status,
+    submittedAt: row.submitted_at,
+    slaDeadline: row.sla_deadline,
+    routingExplanation: row.routing_explanation,
+    escalatedAt: row.escalated_at,
+    resolvedAt: row.resolved_at,
+    escalationNote: row.escalation_note,
+  };
+}
+
 export async function submitComplaint(input: {
   photoBase64: string;
   latitude: number;
@@ -33,14 +54,27 @@ export async function submitComplaint(input: {
   department: string;
   slaDeadline: string;
   routingExplanation: string;
+  ward: string;
 }> {
   return request("/complaints", { method: "POST", body: JSON.stringify(input) });
 }
 
 export async function getComplaint(complaintId: string): Promise<Complaint | null> {
-  return request(`/complaints/${complaintId}`);
+  try {
+    const row = await request<any>(`/complaints-by-id/${complaintId}`);
+    return mapComplaint(row);
+  } catch {
+    return null;
+  }
 }
 
 export async function listComplaints(sessionId: string): Promise<Complaint[]> {
-  return request(`/complaints?sessionId=${encodeURIComponent(sessionId)}`);
+  const rows = await request<any[]>(`/complaints-by-session?sessionId=${encodeURIComponent(sessionId)}`);
+  return rows.map(mapComplaint);
+}
+export async function deleteComplaint(complaintId: string, sessionId: string, reason?: string): Promise<{ complaintId: string; deleted: boolean }> {
+  return request(`/delete-complaint/${complaintId}`, {
+    method: "POST",
+    body: JSON.stringify({ sessionId, reason }),
+  });
 }
