@@ -2,7 +2,8 @@
 What if reporting a civic issue didn't end with "someone should do something"?
 What if it became a complaint that is tracked, routed, and escalated until resolved?
 I built NagarSeva — Civic Grievance Reporting & Community Safety to solve this gap.
-, I developed a prototype featuring:
+I developed a prototype featuring: 
+
 🔹 Photo + GPS-based issue reporting
 🔹 AI-powered complaint routing
 🔹 Real-time complaint tracking
