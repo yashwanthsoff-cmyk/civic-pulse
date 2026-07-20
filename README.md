@@ -13,4 +13,5 @@ I developed a prototype featuring:
 The goal:
 Make civic problems visible. Make authorities accountable. Make resolutions faster.
 From idea to deployment in 2 days — built independently with a focus on solving a real-world problem.
+
 🌐 Live Demo: https://lnkd.in/dQ82iknB
